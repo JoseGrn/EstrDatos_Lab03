@@ -8,10 +8,10 @@ namespace LibreriaGenerica.Estructuras
     public class ArbolBinarioBusqueda<T> : Interfaces.EstruturaBaseArbol<T> where T : IComparable
     {
         Nodo<T> Raiz = new Nodo<T>();
-        Nodo<T> Eliminar = new Nodo<T>();
         public void Add(T Valor, Delegate delegado)
         {
             Insertar(Valor, delegado, Raiz);
+            Raiz = Balancear(Raiz);
         }
         public void Delete(T Valor, Delegate Delegado)
         {
@@ -62,54 +62,7 @@ namespace LibreriaGenerica.Estructuras
         }
         protected override void Borrar(T Valor, Delegate Delegado, Nodo<T> NodoRaiz)
         {
-            if (Convert.ToInt32(Delegado.DynamicInvoke(Valor, NodoRaiz.Valor)) == 1)
-            {
-                Borrar(Valor, Delegado, NodoRaiz.Derecha);
-            }
-            else if (Convert.ToInt32(Delegado.DynamicInvoke(Valor, NodoRaiz.Valor)) == -1)
-            {
-                Borrar(Valor, Delegado, NodoRaiz.Izquierda);
-            }
-            else if (Convert.ToInt32(Delegado.DynamicInvoke(Valor, NodoRaiz.Valor)) == 0)
-            {
-                Eliminar = NodoRaiz;
-                Nodo<T> NodoSustituto = new Nodo<T>();
-                if (NodoRaiz.Izquierda.Valor == null && NodoRaiz.Derecha.Valor == null)
-                {
-                    Eliminar = new Nodo<T>();
-                    NodoRaiz.Valor = Eliminar.Valor;
-                }
-                else if (NodoRaiz.Derecha.Valor == null)
-                {
-                    NodoRaiz = NodoRaiz.Izquierda;
-                    while (NodoRaiz.Derecha.Valor != null)
-                    {
-                        NodoSustituto = NodoRaiz;
-                        NodoRaiz = NodoRaiz.Derecha;
-                    }
-                    Eliminar.Valor = NodoRaiz.Valor;
-                    Eliminar = NodoRaiz.Izquierda;
-                    if (NodoSustituto.Valor == null)
-                        NodoRaiz.Valor = NodoSustituto.Valor;
-                    else
-                        NodoSustituto.Derecha = Eliminar;
-                }
-                else
-                {
-                    NodoRaiz = NodoRaiz.Derecha;
-                    while (NodoRaiz.Izquierda.Valor != null)
-                    {
-                        NodoSustituto = NodoRaiz;
-                        NodoRaiz = NodoRaiz.Izquierda;
-                    }
-                    Eliminar.Valor = NodoRaiz.Valor;
-                    Eliminar = NodoRaiz.Derecha;
-                    if (NodoSustituto.Valor == null)
-                        NodoRaiz.Valor = NodoSustituto.Valor;
-                    else
-                        NodoSustituto.Izquierda = Eliminar;
-                }
-            }
+            
         }
 
         protected override T Obtener(T Valor, Delegate Delegado)
@@ -153,8 +106,81 @@ namespace LibreriaGenerica.Estructuras
 
         }
 
+        private void ActualizarAltura(Nodo<T> NodoRaiz)
+        {
+            NodoRaiz.AlturaIzquierda = 0;
+            NodoRaiz.AlturaDerecha = 0;
+            NodoRaiz.Equilibrio = 0;
+            if (NodoRaiz.Izquierda.Valor != null)
+            {
+                ActualizarAltura(NodoRaiz.Izquierda);
+                if (NodoRaiz.Izquierda.Valor != null)
+                {
+                    NodoRaiz.AlturaIzquierda = Math.Max(NodoRaiz.Izquierda.AlturaDerecha, NodoRaiz.Izquierda.AlturaIzquierda) + 1;
+                    NodoRaiz.Equilibrio = NodoRaiz.AlturaDerecha - NodoRaiz.AlturaIzquierda;
+                }
+            }
+            if (NodoRaiz.Derecha.Valor != null)
+            {
+                ActualizarAltura(NodoRaiz.Derecha);
+                if (NodoRaiz.Derecha.Valor != null)
+                {
+                    NodoRaiz.AlturaDerecha = Math.Max(NodoRaiz.Derecha.AlturaDerecha, NodoRaiz.Derecha.AlturaIzquierda) + 1;
+                    NodoRaiz.Equilibrio = NodoRaiz.AlturaDerecha - NodoRaiz.AlturaIzquierda;
+                }
+            }
+        }
+
+        //ROTACIONES
+        private Nodo<T> Balancear(Nodo<T> NodoRaiz)
+        {
+            //Rotacion Doble a al Inzquierda(+2,-1)
+            if (NodoRaiz.Equilibrio == 2 && NodoRaiz.Derecha.Equilibrio == -1)
+            {
+                //Rotacion Derecha, luego Rotacion Izquierda(2,-1)
+                Nodo<T> NodoSust1 = NodoRaiz.Derecha;
+                Nodo<T> NodoSust2 = NodoRaiz.Derecha.Izquierda;
+                NodoSust1.Izquierda = NodoSust2.Derecha;
+                NodoRaiz.Derecha = NodoSust2;
+                NodoSust2.Derecha = NodoSust1;
+            }
+            //Rotacion Doble a al Derecha(-2,+1)
+            else if (NodoRaiz.Equilibrio == -2 && NodoRaiz.Izquierda.Equilibrio == 1)
+            {
+                //Rotacion Izquierda, luego Rotacion Derecha
+                Nodo<T> NodoSust1 = NodoRaiz.Izquierda;
+                Nodo<T> NodoSust2 = NodoRaiz.Izquierda.Derecha;
+                NodoSust1.Derecha = NodoSust2.Izquierda;
+                NodoRaiz.Izquierda = NodoSust2;
+                NodoSust2.Izquierda = NodoSust1;
+            }
+            //Rotacion Simple a la Izquierda
+            if (NodoRaiz.Equilibrio == 2)
+            {
+                Nodo<T> NodoAux1 = NodoRaiz.Derecha;
+                Nodo<T> NodoAux2 = NodoRaiz.Derecha.Izquierda;
+                NodoRaiz.Derecha = NodoAux2;
+                NodoAux1.Izquierda = NodoRaiz;
+                ActualizarAltura(NodoAux1);
+                NodoRaiz = NodoAux1;
+            }
+            //Rotacion Simple a la Derecha
+
+            else if (NodoRaiz.Equilibrio == -2)
+            {
+                Nodo<T> NodoAux1 = NodoRaiz.Izquierda;
+                Nodo<T> NodoAux2 = NodoRaiz.Izquierda.Derecha;
+                NodoRaiz.Izquierda = NodoAux2;
+                NodoAux1.Derecha = NodoRaiz;
+                ActualizarAltura(NodoAux1);
+                NodoRaiz = NodoAux1;
+            }
+            return NodoRaiz;
+        }
+
         protected override void Insertar(T Valor, Delegate Delegado, Nodo<T> NodoRaiz)
         {
+            NodoRaiz.Equilibrio = 0;
             if (NodoRaiz.Valor == null)
             {
                 NodoRaiz.Valor = Valor;
@@ -163,12 +189,25 @@ namespace LibreriaGenerica.Estructuras
             }
             else if (Convert.ToInt32(Delegado.DynamicInvoke(Valor, NodoRaiz.Valor)) == 1)
             {
+                NodoRaiz.AlturaDerecha = 0;
                 Insertar(Valor, Delegado, NodoRaiz.Derecha);
+                NodoRaiz.Derecha = Balancear(NodoRaiz.Derecha);
+                if (NodoRaiz.Derecha.Valor != null)
+                {
+                    NodoRaiz.AlturaDerecha = Math.Max(NodoRaiz.Derecha.AlturaDerecha, NodoRaiz.Derecha.AlturaIzquierda) + 1;
+                }
             }
             else if (Convert.ToInt32(Delegado.DynamicInvoke(Valor, NodoRaiz.Valor)) == -1)
             {
+                NodoRaiz.AlturaIzquierda = 0;
                 Insertar(Valor, Delegado, NodoRaiz.Izquierda);
+                NodoRaiz.Izquierda = Balancear(NodoRaiz.Izquierda);
+                if (NodoRaiz.Izquierda.Valor != null)
+                {
+                    NodoRaiz.AlturaIzquierda = Math.Max(NodoRaiz.Izquierda.AlturaDerecha, NodoRaiz.Izquierda.AlturaIzquierda) + 1;
+                }
             }
+            NodoRaiz.Equilibrio = NodoRaiz.AlturaDerecha - NodoRaiz.AlturaIzquierda;
         }
         public List<T> Where(Func<T, bool> Predicate)
         {
