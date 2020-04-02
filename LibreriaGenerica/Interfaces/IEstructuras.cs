@@ -7,7 +7,7 @@ namespace LibreriaGenerica.Interfaces
     interface IEstructuras<T>
     {
         void Insertar();
-        void Borrar();
+        T Borrar();
         T Obetener();
     }
 }
